@@ -109,6 +109,6 @@ fn get_playing_info(spotify: &Spotify) -> Option<String> {
         .iter()
         .map(|artist| artist.name.clone())
         .collect::<Vec<_>>();
-    let track_info = format!("{} - {}", track.name, artists.join(", "));
+    let track_info = format!("{} - {}", artists.join(", "), track.name);
     Some(track_info)
 }
