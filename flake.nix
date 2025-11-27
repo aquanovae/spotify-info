@@ -19,7 +19,7 @@
           pkg-config
         ];
       in {
-        packages.spotify-info = rustPlatform.buildRustPackage {
+        packages.default = rustPlatform.buildRustPackage {
           inherit buildInputs nativeBuildInputs;
           pname = "spotify-info";
           version = "0.1.0";
