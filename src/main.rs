@@ -1,4 +1,5 @@
 use anyhow::Result;
+use clap::Parser;
 use env_logger::{
     fmt::Target,
     Builder,
@@ -10,7 +11,7 @@ use rspotify::{
         enums::types::AdditionalType,
         PlayableItem,
     },
-    AuthCodePkceSpotify, Config, Credentials, OAuth
+    AuthCodePkceSpotify, Config, Credentials, OAuth, Token
 };
 use std::path::PathBuf;
 
@@ -24,9 +25,27 @@ const CACHE_PATH: &str = "/tmp/spotify-info";
 const TOKEN_CACHE_PATH: &str = "/tmp/spotify-info/token.json";
 
 
+#[derive(Parser)]
+struct Cli {
+    #[arg(short, default_value_t = false)]
+    authenticate: bool,
+
+    #[arg(short, default_value_t = false)]
+    verbose: bool,
+}
+
+
 fn main() {
+    let cli = Cli::parse();
+    
+    let log_target = if cli.verbose {
+        Target::Stdout
+    } else {
+        Target::Stderr
+    };
+
     Builder::new()
-        .target(Target::Stderr)
+        .target(log_target)
         .filter_level(LevelFilter::Error)
         .init();
 
@@ -38,13 +57,15 @@ fn main() {
         }
     }
 
-    let spotify = match authenticate() {
+
+    let spotify = match get_api(cli.authenticate) {
         Ok(spotify) => spotify,
         Err(why) => {
             log::error!("{}", why);
             return;
         }
     };
+
 
     match get_playing_info(&spotify) {
         Some(info) => {
@@ -57,7 +78,32 @@ fn main() {
 }
 
 
+fn get_api(auth: bool) -> Result<Spotify> {
+    match auth {
+        true => authenticate(),
+        false => from_cache(),
+    }
+}
+
+
 fn authenticate() -> Result<Spotify> {
+    let (creds, oauth, config) = pkce_config();
+    let mut spotify = Spotify::with_config(creds, oauth, config);
+    let authorize_url = spotify.get_authorize_url(Some(128))?;
+    spotify.prompt_for_token(&authorize_url)?;
+    Ok(spotify)
+}
+
+
+fn from_cache() -> Result<Spotify> {
+    let token = Token::from_cache(TOKEN_CACHE_PATH)?;
+    let (creds, oauth, config) = pkce_config();
+    let spotify = Spotify::from_token_with_config(token, creds, oauth, config);
+    Ok(spotify)
+}
+
+
+fn pkce_config() -> (Credentials, OAuth, Config) {
     let creds = Credentials::new_pkce(CLIENT_ID);
     let oauth = OAuth{
         redirect_uri: REDIRECT_URI.to_string(),
@@ -72,10 +118,7 @@ fn authenticate() -> Result<Spotify> {
         token_refreshing: true,
         ..Default::default()
     };
-    let mut spotify = Spotify::with_config(creds, oauth, config);
-    let authorize_url = spotify.get_authorize_url(Some(128))?;
-    spotify.prompt_for_token(&authorize_url)?;
-    Ok(spotify)
+    (creds, oauth, config)
 }
 
 

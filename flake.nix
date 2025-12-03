@@ -24,7 +24,7 @@
           pname = "spotify-info";
           version = "0.1.0";
           src = ./.;
-          cargoHash = "sha256-czHT98gNOVFd+kGBmfr9QUL4Hw0l3qBIFYkQmkhfIAY=";
+          cargoHash = "sha256-vwQXDE4sWB5nyOea+frNQLsV1kJEewOnexo2MQbcZyw=";
         };
 
         devShells.default = mkShell {
