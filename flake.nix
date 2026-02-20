@@ -4,34 +4,36 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
-  outputs = { flake-parts, ... }@inputs: (
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "x86_64-linux" ];
+  outputs = { flake-parts, ... }@inputs: flake-parts.lib.mkFlake { inherit inputs; } {
+    systems = [ "x86_64-linux" ];
 
-      perSystem = { pkgs, ... }: with pkgs; let 
-        buildInputs = [
-          openssl
-        ];
-        nativeBuildInputs = [
-          cargo
-          cargo-edit
-          rustc
-          pkg-config
-        ];
-      in {
-        packages.default = rustPlatform.buildRustPackage {
-          inherit buildInputs nativeBuildInputs;
-          pname = "spotify-info";
-          version = "0.1.0";
-          src = ./.;
-          cargoHash = "sha256-vwQXDE4sWB5nyOea+frNQLsV1kJEewOnexo2MQbcZyw=";
-        };
+    perSystem = { pkgs, ... }: with pkgs; let 
 
-        devShells.default = mkShell {
-          inherit buildInputs nativeBuildInputs;
-          name = "rust";
-        };
+      buildInputs = [
+        openssl
+      ];
+
+      nativeBuildInputs = [
+        cargo
+        cargo-edit
+        pkg-config
+        rustc
+      ];
+
+    in {
+
+      devShells.default = mkShell {
+        name = "rust";
+        inherit buildInputs nativeBuildInputs;
       };
-    }
-  );
+
+      packages.default = rustPlatform.buildRustPackage {
+        pname = "spotify-info";
+        version = "0.1.0";
+        src = ./.;
+        cargoHash = "sha256-djtfIq2NpKyLRcQHtYfzTMqashtYue5C2oD2IwGjKX0=";
+        inherit buildInputs nativeBuildInputs;
+      };
+    };
+  };
 }

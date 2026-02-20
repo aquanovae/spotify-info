@@ -1,18 +1,12 @@
 use anyhow::Result;
 use clap::Parser;
-use env_logger::{
-    fmt::Target,
-    Builder,
-};
+use env_logger::Builder;
+use env_logger::fmt::Target;
 use log::LevelFilter;
-use rspotify::{
-    clients::OAuthClient,
-    model::{
-        enums::types::AdditionalType,
-        PlayableItem,
-    },
-    AuthCodePkceSpotify, Config, Credentials, OAuth, Token
-};
+use rspotify::{ AuthCodePkceSpotify, Config, Credentials, OAuth, Token };
+use rspotify::clients::OAuthClient;
+use rspotify::model::PlayableItem;
+use rspotify::model::enums::types::AdditionalType;
 use std::path::PathBuf;
 
 
@@ -38,10 +32,9 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     
-    let log_target = if cli.verbose {
-        Target::Stdout
-    } else {
-        Target::Stderr
+    let log_target = match cli.verbose {
+        true => Target::Stdout,
+        false => Target::Stderr,
     };
 
     Builder::new()
@@ -50,10 +43,10 @@ fn main() {
         .init();
 
     match std::fs::create_dir_all(CACHE_PATH) {
-        Ok(_) => (),
+        Ok(_) => {}
         Err(why) => {
             log::error!("{}", why);
-            return;
+            return
         }
     }
 
@@ -62,19 +55,15 @@ fn main() {
         Ok(spotify) => spotify,
         Err(why) => {
             log::error!("{}", why);
-            return;
+            return
         }
     };
 
 
     match get_playing_info(&spotify) {
-        Some(info) => {
-            println!("{}", info);
-        },
-        None => {
-            return;
-        }
-    };
+        Some(info) => println!("{}", info),
+        None => {}
+    }
 }
 
 
@@ -124,33 +113,20 @@ fn pkce_config() -> (Credentials, OAuth, Config) {
 
 fn get_playing_info(spotify: &Spotify) -> Option<String> {
     let context = match spotify.current_playing(None, None::<Vec<&AdditionalType>>) {
-        Ok(context) => context,
+        Ok(Some(context)) => context,
+        Ok(None) => return None,
         Err(why) => {
             log::error!("{}", why);
-            return None;
+            return None
         }
     };
-    let context = match context {
-        Some(context) => context,
-        None => {
-            return None;
-        }
-    };
-    let item = match context.item {
-        Some(item) => item,
-        None => {
-            return None;
-        }
-    };
-    let track = match item {
-        PlayableItem::Track(track) => track,
-        _ => {
-            return None;
-        }
+    let track = match context.item {
+        Some(PlayableItem::Track(track)) => track,
+        _ => return None
     };
     let artists = track.artists
         .iter()
-        .map(|artist| artist.name.clone())
+        .map(|artist| artist.name.as_str())
         .collect::<Vec<_>>();
     let track_info = format!("{} - {}", artists.join(", "), track.name);
     Some(track_info)
