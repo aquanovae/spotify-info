@@ -31,7 +31,7 @@
         pname = "spotify-info";
         version = "0.1.0";
         src = ./.;
-        cargoHash = "sha256-djtfIq2NpKyLRcQHtYfzTMqashtYue5C2oD2IwGjKX0=";
+        cargoHash = "sha256-HAJ+U2KMiNVp7ud9wZ3tDvonD2XgvE3Xi2mvvG7Yi3k=";
         inherit buildInputs nativeBuildInputs;
       };
     };
